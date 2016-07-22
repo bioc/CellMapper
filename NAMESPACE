@@ -1,0 +1,8 @@
+export(CM.prep)
+export(CM.search)
+export(ReplicateManuscript)
+exportPattern(ExampleQueryGenes)
+exportPattern(PositiveControlGenes)
+exportPattern(NegativeControlGenes)
+importFrom("stats", "mad", "median", "na.omit", "pnorm", "qnorm", "var", "p.adjust", "sd")
+importFrom("utils", "data")
