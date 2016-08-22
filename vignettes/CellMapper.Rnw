@@ -26,37 +26,80 @@ BiocStyle::latex()
 \section{Overview}
 %---------------------------------------------------------
 
-Cell type-specific gene expression plays a defining role in cellular function and differentiation. There are many situations where identifying which genes are most strongly expressed in one cell type relative to others can provide important biological insights. \Biocpkg{CellMapper} infers which genes are strongly expressed in one cell type relative to others by identifying genes that share an expression profile similar to an established set of cell type-specific markers, referred to here as 'query genes'. CellMapper can incorporate information from heterogeneous samples that contain mixtures of many different cell types, and can provide accurate predictions even when a cell type has not been isolated \cite{CellMapper}.
+Cell type-specific gene expression plays a defining role in cellular function 
+and differentiation. There are many situations where identifying which genes are
+most strongly expressed in one cell type relative to others can provide 
+important biological insights. \Biocpkg{CellMapper} infers which genes are 
+strongly expressed in one cell type relative to others by identifying genes that
+share an expression profile similar to an established set of cell type-specific
+markers, referred to here as 'query genes'. CellMapper can incorporate 
+information from heterogeneous samples that contain mixtures of many different 
+cell types, and can provide accurate predictions even when a cell type has not 
+been isolated \cite{CellMapper}.
 
-This vignette provides an introduction to gene-driven analysis using the \Biocpkg{CellMapper} R package and the accompany data package, \Biocpkg{CellMapperData}. It contains guidelines on how to select all inputs to the algorithm (such as query genes and gene expression data), directions for running CellMapper using microarray data from the \Biocpkg{CellMapperData} package, and advanced examples where custom microarray datasets are used.
+This vignette provides an introduction to gene-driven analysis using the 
+\Biocpkg{CellMapper} R package and the accompany data package, 
+\Biocpkg{CellMapperData}. It contains guidelines on how to select all inputs to 
+the algorithm (such as query genes and gene expression data), directions for 
+running CellMapper using microarray data from the \Biocpkg{CellMapperData} 
+package, and advanced examples where custom microarray datasets are used.
 
 
 %---------------------------------------------------------
 \section{Getting Started}
 %---------------------------------------------------------
 
-To use the \Biocpkg{CellMapper} package, \R{} and \Bioconductor{} must first be installed. A command line version of \R{} can be downloaded from \href{http://www.r-project.org}{www.r-project.org}, or for those more comfortable working with a graphical user interface environment, there are several options; we recommend \software{RStudio} (\href{http://www.rstudio.com}{www.rstudio.com}). Both \R{} and RStudio are available for Windows, Mac, and Linux, and documentation to help with installation can be found on the websites. After \R{} is installed, the \Bioconductor{} base package can be installed as described at \href{http://bioconductor.org/install/}{bioconductor.org/install/}.
+To use the \Biocpkg{CellMapper} package, \R{} and \Bioconductor{} must first be 
+installed. A command line version of \R{} can be downloaded from 
+\href{http://www.r-project.org}{www.r-project.org}, or for those more 
+comfortable working with a graphical user interface environment, there are 
+several options; we recommend \software{RStudio} 
+(\href{http://www.rstudio.com}{www.rstudio.com}). Both \R{} and RStudio are 
+available for Windows, Mac, and Linux, and documentation to help with 
+installation can be found on the websites. After \R{} is installed, the 
+\Bioconductor{} base package can be installed as described at 
+\href{http://bioconductor.org/install/}{bioconductor.org/install/}.
 
-Next, the CellMapper package can be downloaded and installed by running the following code from within R:
+Next, the CellMapper package can be downloaded and installed by running the 
+following code from within R:
 
 <<eval=FALSE>>=
 source("http://bioconductor.org/biocLite.R")
 biocLite("CellMapper")
 @
 
-We also recommend installing the companion data package, \Biocpkg{CellMapperData}, which contains pre-processed microarray data from several large gene expression datasets. The data in this package is derived from 18,932 human and 1,332 mouse microarray experiments performed on a wide range of samples, including whole organs, purified cell populations, cell lines, and 900 distinct sub-regions of the adult human brain. \Biocpkg{CellMapper} can be used to search these datasets individually or in aggregate, depending on which tissue and/or species is most relevant to the cell type(s) of interest. More details about this data can be found in the package documentation. The data package requires 780 Mb of space, and can be installed using the following command:
+We also recommend installing the companion data package, 
+\Biocpkg{CellMapperData}, which contains pre-processed microarray data from 
+several large gene expression datasets. The data in this package is derived from
+18,932 human and 1,332 mouse microarray experiments performed on a wide range 
+of samples, including whole organs, purified cell populations, cell lines, and 
+900 distinct sub-regions of the adult human brain. \Biocpkg{CellMapper} can be 
+used to search these datasets individually or in aggregate, depending on which 
+tissue and/or species is most relevant to the cell type(s) of interest. More 
+details about this data can be found in the package documentation. The data 
+package is available from \Bioconductor{}'s \Biocpkg{ExperimentHub}, and can be 
+accessed as follows:
 
-<<eval=FALSE>>=
-biocLite("CellMapperData")
+<<>>=
+library("ExperimentHub")
+hub <- ExperimentHub()
+x <- query(hub, "CellMapperData")
+x
 @
 
-If desired, this package can later be removed to clear up space:
 
-<<eval=FALSE>>=
-remove.packages("CellMapperData")
+After installing and loading \Biocpkg{ExperimentHub}, the individual 
+CellMapperData datasets can be loaded using their \Biocpkg{ExperimentHub} 
+accession numbers. For instance, the Allen Brain Atlas dataset is stored under 
+accession number 'EH170' and can be downloaded using the following code:
+
+<<>>=
+BrainAtlas <- hub[["EH170"]]
+BrainAtlas
 @
 
-For general information about using \R{}, the \R{} and \Bioconductor{} websites contain extensive documentation, and many helpful tutorials can be found online.
+For general information about using \R{}, the \R{} and \Bioconductor{} websites 
+contain extensive documentation, and many helpful tutorials can be found online.
 
 
 
@@ -64,26 +107,77 @@ For general information about using \R{}, the \R{} and \Bioconductor{} websites 
 \section{Planning a CellMapper Analysis}
 %---------------------------------------------------------
 
-\Biocpkg{CellMapper} requires, at a minimum, two inputs: (i) a set of gene expression data and (ii) one or more 'query genes' specific to the cell type of interest. In most cases, the pre-processed microarray data from the \Biocpkg{CellMapperData} package will be sufficient, and so the main decision involves choosing the query gene(s).
+\Biocpkg{CellMapper} requires, at a minimum, two inputs: (i) a set of gene 
+expression data and (ii) one or more 'query genes' specific to the cell type of 
+interest. In most cases, the pre-processed microarray data from the 
+\Biocpkg{CellMapperData} package will be sufficient, and so the main decision 
+involves choosing the query gene(s).
 
 
 \subsection{Gene Expression Data}
 
-\Biocpkg{CellMapper} performs best with large sample sizes in excess of 500 arrays, and so it is generally advisable to use large datasets that combine expression data from multiple sources. The \Biocpkg{CellMapperData} package contains data from three large microarray meta-analyses that span a range of human and mouse samples, and one dataset from the Allen Brain Atlas focused on the adult human brain. For most non-brain cell types, we recommend searching the three large meta-analyses as described in \ref{metaSearch}, while for brain cell types we recommend searching the Allen Brain Atlas dataset as described in \ref{brainSearch}. \Biocpkg{CellMapper} can also be applied to custom microarray datasets as described in \ref{customSearch}, or to data from a specific tissue or organ as described in \ref{singleOrgan}.
+\Biocpkg{CellMapper} performs best with large sample sizes in excess of 500 
+arrays, and so it is generally advisable to use large datasets that combine 
+expression data from multiple sources. The \Biocpkg{CellMapperData} package 
+contains data from three large microarray meta-analyses that span a range of 
+human and mouse samples, and one dataset from the Allen Brain Atlas focused on 
+the adult human brain. For most non-brain cell types, we recommend searching the
+three large meta-analyses as described in \ref{metaSearch}, while for brain 
+cell types we recommend searching the Allen Brain Atlas dataset as described in 
+\ref{brainSearch}. \Biocpkg{CellMapper} can also be applied to custom microarray
+datasets as described in \ref{customSearch}, or to data from a specific tissue 
+or organ as described in \ref{singleOrgan}.
 
 
 \subsection{Query Genes}
-A set of cell type-specific marker genes, called 'query genes', are used to define a reference expression profile for a given cell type. Then other genes that display a similar expression profile to the query genes are identified, as these genes are likely to be expressed in the same cell type. \Biocpkg{CellMapper} was designed to accurately predict cell type-specific expression with as little as a single query gene, and is compatible with standard cell type-specific markers used in a variety of experimental techniques, including immunohistochemistry, flow cytometry, and promoter-directed (Cre-lox) conditional knockout mice.
+A set of cell type-specific marker genes, called 'query genes', are used to 
+define a reference expression profile for a given cell type. Then other genes 
+that display a similar expression profile to the query genes are identified, as 
+these genes are likely to be expressed in the same cell type. 
+\Biocpkg{CellMapper} was designed to accurately predict cell type-specific 
+expression with as little as a single query gene, and is compatible with 
+standard cell type-specific markers used in a variety of experimental 
+techniques, including immunohistochemistry, flow cytometry, and 
+promoter-directed (Cre-lox) conditional knockout mice.
 
-The most important criterion when choosing a query gene is that the gene is expressed only in the cell type of interest. It is important to consider potential expression in any other cell type that might be present in the samples contained within a dataset. For example, when searching the Allen Brain Atlas data, which contains exclusively samples from the brain, a good query gene must not be expressed in any other cell type present in the brain. When searching any of the three meta-analyses datasets from the \Biocpkg{CellMapperData} package, which contain samples from essentially every organ, a good query gene must not be expressed in any other mammalian cell type.
+The most important criterion when choosing a query gene is that the gene is 
+expressed only in the cell type of interest. It is important to consider 
+potential expression in any other cell type that might be present in the samples
+ contained within a dataset. For example, when searching the Allen Brain Atlas 
+data, which contains exclusively samples from the brain, a good query gene must 
+not be expressed in any other cell type present in the brain. When searching any
+of the three meta-analyses datasets from the \Biocpkg{CellMapperData} package, 
+which contain samples from essentially every organ, a good query gene must not 
+be expressed in any other mammalian cell type.
 
-If multiple suitable marker genes are available for a cell type, \Biocpkg{CellMapper} can be applied with >1 query gene. However, it is better to use a single carefully chosen query gene than to include additional query genes of questionable quality.
+If multiple suitable marker genes are available for a cell type, 
+\Biocpkg{CellMapper} can be applied with >1 query gene. However, it is better to
+use a single carefully chosen query gene than to include additional query genes 
+of questionable quality.
 
-To identify potential query genes, a great place to start is by searching the \ref{http://cre.jax.org/}{JAX mice database} to see if there are any conditional knockout mice strains available for the cell type of interest. This database lists many mice strains where the Cre-recombinase gene is expressed using a cell type-specific promoter. Because these strains express the Cre transgene in every cell type where the chosen promoter is active, most conditional knockout mice have been thoroughly evaluated to characterize which cell types the promoter driving Cre expression is active in. If there are no conditional knockout mice available for a cell type, many antibody suppliers provide detailed lists of antibodies that target genes expressed specifically in different cell types.
+To identify potential query genes, a great place to start is by searching the 
+JAX mice database (http://cre.jax.org/) to see if there are any conditional 
+knockout mice strains available for the cell type of interest. This database 
+lists many mice strains where the Cre-recombinase gene is expressed using a cell
+type-specific promoter. Because these strains express the Cre transgene in every
+cell type where the chosen promoter is active, most conditional knockout mice 
+have been thoroughly evaluated to characterize which cell types the promoter 
+driving Cre expression is active in. If there are no conditional knockout mice 
+available for a cell type, many antibody suppliers provide detailed lists of 
+antibodies that target genes expressed specifically in different cell types.
 
 
 \subsection{Other Parameters (optional)}
-\Biocpkg{CellMapper} applies an SVD-based filter as a pre-processing step to highlight biologically important signals in the microarray data. The \Biocpkg{CellMapper} R package allows the strength of this pre-processing filter to be tuned using two parameters: an alpha parameter, which ranges from 1 (no filter) to 0 (strong filter), and a query-driven weight parameter, which can either be set to TRUE (query-driven weight filter is ON) or FALSE (query-driven weight filter is OFF). These parameters are discussed in more detail in the CellMapper manuscript and the package documentation. In general, both parameters can be safely left at their default values (alpha = 0.5 and query-driven weight set to TRUE).
+\Biocpkg{CellMapper} applies an SVD-based filter as a pre-processing step to 
+highlight biologically important signals in the microarray data. The 
+\Biocpkg{CellMapper} R package allows the strength of this pre-processing filter
+to be tuned using two parameters: an alpha parameter, which ranges from 1 (no
+filter) to 0 (strong filter), and a query-driven weight parameter, which can 
+either be set to TRUE (query-driven weight filter is ON) or FALSE (query-driven 
+weight filter is OFF). These parameters are discussed in more detail in the 
+CellMapper manuscript and the package documentation. In general, both parameters
+can be safely left at their default values (alpha = 0.5 and query-driven weight 
+set to TRUE).
 
 
 %---------------------------------------------------------
@@ -92,34 +186,57 @@ To identify potential query genes, a great place to start is by searching the \r
 
 \subsection{With a Single Microarray Dataset} \label{brainSearch}
 
-To run a CellMapper analysis, the first step is to start R and load the \Biocpkg{CellMapper} package:
+To run a CellMapper analysis, the first step is to start R and load the 
+\Biocpkg{CellMapper} package:
 
 <<>>=
 library(CellMapper)
 @
 
-As an initial example, we will demonstrate a CellMapper analysis to find genes expressed in GABAergic neurons using the query gene glutamate decarboxylase 1 (GAD1). GAD1 is an enzyme that catalyzes the final step in the biosynthesis of gamma-aminobutyric acid (GABA, the neurotransmitter that defines the GABAergic class of neurons, and is widely used as a specific marker for this neuron lineage.
+As an initial example, we will demonstrate a CellMapper analysis to find genes 
+expressed in GABAergic neurons using the query gene glutamate decarboxylase 1 
+(GAD1). GAD1 is an enzyme that catalyzes the final step in the biosynthesis of 
+gamma-aminobutyric acid (GABA, the neurotransmitter that defines the GABAergic 
+class of neurons, and is widely used as a specific marker for this neuron 
+lineage.
 
-To load the Allen Brain Atlas data \cite{BrainAtlas}, run the following two commands:
+For this example, we will use a large microarray dataset from the Allen Brain 
+Atlas \cite{BrainAtlas}. This dataset is available from the 
+\Biocpkg{CellMapperData} on \Biocpkg{ExperimentHub}:
 
 <<>>=
-library(CellMapperData)
-data(BrainAtlas)
+library(ExperimentHub)
+hub <- ExperimentHub()
+query(hub, "CellMapperData")
 @
 
-Next, we will set our query and control genes. The datasets from \Biocpkg{CellMapperData} all use human Entrez IDs, and so we need to define all genes using Entrez identifiers. First, define a variable containing our choice of query gene, GAD1 (Entrez ID = 2571):
+As can be seen above, the Allen Brain Atlas data is stored under accession 
+'EH170'. This dataset can be loaded using the following command:
+
+<<>>=
+BrainAtlas <- hub[["EH170"]]
+@
+
+Next, we will set our query and control genes. The datasets from 
+\Biocpkg{CellMapperData} all use human Entrez IDs, and so we need to define all 
+genes using Entrez identifiers. First, define a variable containing our choice 
+of query gene, GAD1 (Entrez ID = 2571):
 
 <<>>=
 query <- "2571"
 @
 
-Then run the analysis using the CM.search function. CM.search provides the core functionality of the CellMapper package, and can be run to predict GABAergic genes using our selected dataset and query gene:
+Then run the analysis using the CMsearch function. CMsearch provides the core 
+functionality of the CellMapper package, and can be run to predict GABAergic 
+genes using our selected dataset and query gene:
 
 <<>>=
-GABAergic <- CM.search(BrainAtlas, query.genes = query)
+GABAergic <- CMsearch(BrainAtlas, query.genes = query)
 @
 
-CM.search returns a matrix, in rank order, containing the false discovery rate (FDR) that each gene is co-expressed with the cell type-specific query gene. To view the top results for this analysis within R, use the head function:
+CMsearch returns a matrix, in rank order, containing the false discovery rate 
+(FDR) that each gene is co-expressed with the cell type-specific query gene. To 
+view the top results for this analysis within R, use the head function:
 
 <<>>=
 head(GABAergic)
@@ -134,27 +251,40 @@ write.csv(GABAergic, file = "CellMapper analysis for GABAergic neurons.csv")
 
 \subsection{With Multiple Microarray Datasets} \label{metaSearch}
 
-In this example, we will search for genes expressed in simple epithelial cells using the epithelial marker gene KRT8. Simple epithelia can be found in many different organs, and so we will pool results from the three meta-analysis datasets contained within the \Biocpkg{CellMapperData} package. First, load the three meta-analysis datasets from the CellMapperData:
+In this example, we will search for genes expressed in simple epithelial cells 
+using the epithelial marker gene KRT8. Simple epithelia can be found in many 
+different organs, and so we will pool results from the three meta-analysis 
+datasets contained within the \Biocpkg{CellMapperData} package. First, load the 
+three meta-analysis datasets from \Biocpkg{CellMapperData}:
 
 <<>>=
-library(CellMapperData)
-data(Engreitz)
-data(Lukk)
-data(ZhengBradley)
+Engreitz <- hub[["EH171"]]
+Lukk <- hub[["EH172"]]
+ZhengBradley <- hub[["EH173"]]
 @
 
-The dataset from \cite{ZhengBradley} contains data from mouse microarray samples. ZhengBradley is a pre-processed version where the mouse Entrez IDs have been replaced with Entrez IDs for their human orthologs. This allows human Entrez IDs to be used for every search and there is no need to worry about mapping orthologs between species.
+The dataset from \cite{ZhengBradley} contains data from mouse microarray 
+samples. ZhengBradley is a pre-processed version where the mouse Entrez IDs have
+been replaced with Entrez IDs for their human orthologs. This allows human 
+Entrez IDs to be used for every search and there is no need to worry about 
+mapping orthologs between species.
 
-Next, we will run CM.search using the query gene to KRT8 (Entrez ID 3856):
+Next, we will run CMsearch using the query gene to KRT8 (Entrez ID 3856):
 
 <<>>=
 query2 <- "3856"
 
-SimpleEpithelia <- CM.search(list(Engreitz, Lukk, ZhengBradley), query.genes = query2)
+SimpleEpithelia <- CMsearch(list(Engreitz, Lukk, ZhengBradley), query.genes = 
+query2)
 head(SimpleEpithelia)
 @
 
-The output from the multiple dataset analysis is identical to the output from individual CellMapper searches, and contains matrix, in rank order, containing the Entrez ID and false discovery rate (FDR) for each gene. These results can be viewed from within R using the head function, or saved as a .csv file to import into a spreadsheet software such as Excel, as described at the end of \ref{brainSearch}.
+The output from the multiple dataset analysis is identical to the output from 
+individual CellMapper searches, and contains matrix, in rank order, containing 
+the Entrez ID and false discovery rate (FDR) for each gene. These results can be
+viewed from within R using the head function, or saved as a .csv file to import 
+into a spreadsheet software such as Excel, as described at the end of 
+\ref{brainSearch}.
 
 
 %---------------------------------------------------------
@@ -163,22 +293,36 @@ The output from the multiple dataset analysis is identical to the output from in
 
 \subsection{Using Custom Microarray Data} \label{customSearch}
 
-CellMapper can also be run using custom microarray data. In this case, the data must first be pre-processed with the CM.prep function. CM.prep accepts microarray data in either of two formats: a matrix of expression data with genes as rows and samples as columns, or a \Bioconductor{} ExpressionSet object. Most microarray normalization packages in \Bioconductor{} return the results as an ExpressionSet object, and this output can be passed directly to the CM.prep function.
+CellMapper can also be run using custom microarray data. In this case, the data 
+must first be pre-processed with the CMprep function. CMprep accepts microarray 
+data in either of two formats: a matrix of expression data with genes as rows 
+and samples as columns, or a \Bioconductor{} ExpressionSet object. Most 
+microarray normalization packages in \Bioconductor{} return the results as an 
+ExpressionSet object, and this output can be passed directly to the CMprep 
+function.
 
-For this example, we will use a dataset of human leukemia samples from the \Biocpkg{ALL} data package. This dataset was selected solely for illustrative purposes, and is not necessarily an ideal choice for CellMapper. To load this dataset, install the ALL package and run the following lines of code:
+For this example, we will use a dataset of human leukemia samples from the 
+\Biocpkg{ALL} data package. This dataset was selected solely for illustrative 
+purposes, and is not necessarily an ideal choice for CellMapper. To load this 
+dataset, install the ALL package and run the following lines of code:
 
 <<>>=
 library(ALL)
 data(ALL)
 @
 
-Then pre-process the ALL expression dataset with the CM.prep function:
+Then pre-process the ALL expression dataset with the CMprep function:
 
 <<>>=
-prepped.data <- CM.prep(ALL)
+prepped.data <- CMprep(ALL)
 @
 
-For the large datasets (> 1000 arrays), the CM.prep function can take between >10 minutes to run on a personal laptop. All inputs to the CellMapper algorithm, including the choice of query genes and algorithm parameters, are selected after the pre-processing step is completed. Thus, the pre-processing step only needs to be performed once for any new dataset, and the results can then be saved and accessed at a later time for each CellMapper search:
+For the large datasets (> 1000 arrays), the CMprep function can take over an 
+hour to run on a personal laptop. All inputs to the CellMapper algorithm, 
+including the choice of query genes and algorithm parameters, are selected after
+the pre-processing step is completed. Thus, the pre-processing step only needs 
+to be performed once for any new dataset, and the results can then be saved and 
+accessed at a later time for each CellMapper search:
 
 <<eval=FALSE>>=
 save(prepped.data, file = "Custom Data for CellMapper.Rdata")
@@ -190,76 +334,136 @@ This saved data file can be later loaded into R with the load function:
 load("Custom Data for CellMapper.Rdata")
 @
 
-After processing the data, CellMapper can be applied using the CM.search function as described in \ref{basic}. It is important to select query and control genes using the same identifiers as provided for the original microarray dataset. The ALL dataset uses Affymetrix probeset IDs rather than Entrez gene IDs, and so all query genes should be selected using their corresponding Affymetrix probeset IDs. For example, CellMapper can be used to search the ALL pre-processed data using the probeset "1000\_at" as a query gene:
+After processing the data, CellMapper can be applied using the CMsearch function
+as described in \ref{basic}. It is important to select query and control genes 
+using the same identifiers as provided for the original microarray dataset. The 
+ALL dataset uses Affymetrix probeset IDs rather than Entrez gene IDs, and so all
+query genes should be selected using their corresponding Affymetrix probeset 
+IDs. For example, CellMapper can be used to search the ALL pre-processed data 
+using the probeset "1000\_at" as a query gene:
 
 <<>>=
-out <- CM.search(prepped.data, query.genes = "1000_at")
+out <- CMsearch(prepped.data, query.genes = "1000_at")
 head(out)
 @
 
-Alternatively, probesets can be mapped to genes before running the CM.prep function, and then all CellMapper searches can be performed using gene identifiers.
+Alternatively, probesets can be mapped to genes before running the CMprep 
+function, and then all CellMapper searches can be performed using gene 
+identifiers.
 
 
-\subsection{Accessing Sample Metadata to Restrict Search to a Single Organ or Tissue} \label{singleOrgan}
+\subsection{Accessing Sample Metadata to Restrict Search to a Single Organ or 
+Tissue} \label{singleOrgan}
 
-Some cell types only have markers available that are specific within one organ, but are not specific organism-wide. In such cases, \Biocpkg{CellMapper} can still be applied provided the search is restricted to data from the organ or tissue where the markers are specific. For brain cell types, the search can be restricted simply by selecting the Allen Brain Atlas dataset as described in \ref{brainSearch}. For non-brain cell types, however, a custom microarray dataset must be used that is restricted to the organ where markers are available.
+Some cell types only have markers available that are specific within one organ, 
+but are not specific organism-wide. In such cases, \Biocpkg{CellMapper} can 
+still be applied provided the search is restricted to data from the organ or 
+tissue where the markers are specific. For brain cell types, the search can be 
+restricted simply by selecting the Allen Brain Atlas dataset as described in 
+\ref{brainSearch}. For non-brain cell types, however, a custom microarray 
+dataset must be used that is restricted to the organ where markers are 
+available.
 
-In this example, we illustrate how to restrict CellMapper to a specific organ by accessing sample metadata. We will search for genes specifically expressed in enteroendocrine cells (EECs) using an intestine-specific subset of the microarray datasets from \cite{Lukk} and \cite{Engreitz}. EECs are a rare intestinal cell type, comprising <1\% of the gut epithelium. Chromogranin A (CHGA) is the most established genetic marker of EECs within the intestine, but it is also expressed by neurons and other endocrine cell types in other tissues and so does not make a good marker for EECs organism-wide. We will overcome this problem by selecting only intestine microarray datasets to analyze.
+In this example, we illustrate how to restrict CellMapper to a specific organ by
+accessing sample metadata. We will search for genes specifically expressed in 
+enteroendocrine cells (EECs) using an intestine-specific subset of the 
+microarray datasets from \cite{Lukk} and \cite{Engreitz}. EECs are a rare 
+intestinal cell type, comprising <1\% of the gut epithelium. Chromogranin A 
+(CHGA) is the most established genetic marker of EECs within the intestine, but 
+it is also expressed by neurons and other endocrine cell types in other tissues 
+and so does not make a good marker for EECs organism-wide. We will overcome this
+problem by selecting only intestine microarray datasets to analyze.
 
-The original data from \cite{Lukk} and \cite{Engreitz} are available from ArrayExpress (E-MTAB-62) and GEO (GSE64985), respectively. For convenience, we have also deposited these datasets to Bioconductor as data packages. We recommend using the Bioconductor packages, because these can be installed and loaded quickly from within R. First, load the Lukk data package (package name \Biocpkg{E.MTAB.62}) within R:
+The original data from \cite{Lukk} and \cite{Engreitz} are available from 
+ArrayExpress (E-MTAB-62) and GEO (GSE64985), respectively. For convenience, we 
+have also deposited these datasets to \Biocpkg{ExperimentHub} in the package 
+\Biocpkg{HumanAffyData}:
 
 <<>>=
-library(E.MTAB.62)
-data(E.MTAB.62)
+query(hub, "HumanAffyData")
 @
 
-This dataset is stored as a Bioconductor ExpressionSet object, and includes both expression data and phenotype data. Lukk, et al. (2010) manually curated all samples in the dataset, and provided extensive phenotypic information about each sample. This phenotype data can be used to select samples from a specific organ, and can be accessed with the pData function:
+First, load the data from E-MTAB-62 (\Biocpkg{ExperimentHub} accession 'EH177'):
+
+<<>>=
+E.MTAB.62 <- hub[["EH177"]]
+E.MTAB.62
+@
+
+This dataset is stored as a Bioconductor ExpressionSet object, and includes both
+expression data and phenotype data. Lukk, et al. (2010) manually curated all 
+samples in the dataset, and provided extensive phenotypic information about each
+sample. This phenotype data can be used to select samples from a specific organ,
+and can be accessed with the pData function:
 
 <<>>=
 pDat <- pData(E.MTAB.62)
 @
 
-We are interested in the column of this phenotype data labeled 'OrganismPart', because this column contains information about the organ or tissue of origin for each sample. For example, the first 30 categories in the 'OrganismPart' column are:
+We are interested in the column of this phenotype data labeled 'OrganismPart', 
+because this column contains information about the organ or tissue of origin for
+each sample. For example, the first 30 categories in the 'OrganismPart' column 
+are:
 
 <<>>=
 unique(pDat$OrganismPart)[1:30]
 @
 
-After examining all 131 categories in this column, we find three that are relevant to enteroendocrine cells: 'colon', 'colon mucosa', and 'small intestine'. To select the subset of the Lukk dataset associated with these sample categories, first create a variable that identifies these samples:
+After examining all 131 categories in this column, we find three that are 
+relevant to enteroendocrine cells: 'colon', 'colon mucosa', and 'small 
+intestine'. To select the subset of the Lukk dataset associated with these 
+sample categories, first create a variable that identifies these samples:
 
 <<>>=
-samples <- which(pDat$OrganismPart %in% c("colon", "colon mucosa", "Small intestine"))
+samples <- which(pDat$OrganismPart %in% c("colon", "colon mucosa",
+"Small intestine"))
 @
 
-Then access the expression data for these samples using the Biobase exprs function:
+Then access the expression data for these samples using the Biobase exprs 
+function:
 
 <<>>=
 Lukk_unprocessed.gut <- exprs(E.MTAB.62)[, samples] 
 @
 
-The new variable, Lukk\_unprocessed.gut, now contains a matrix of expression values with Entrez IDs as rows and 130 intestine-specific samples as columns. To pre-process this data for CellMapper, use the CM.prep function as described in \ref{basic}:
+The new variable, Lukk\_unprocessed.gut, now contains a matrix of expression 
+values with Entrez IDs as rows and 130 intestine-specific samples as columns. To
+pre-process this data for CellMapper, use the CMprep function as described in 
+\ref{basic}:
 
 <<>>=
-Lukk.gut <- CM.prep(Lukk_unprocessed.gut)
+Lukk.gut <- CMprep(Lukk_unprocessed.gut)
 @
 
-Next, we will prepare an intestine-specific subset of the Engreitz dataset. Load the GSE64985 Bioconductor package and create a variable with the phenotypic data using the same approach described above for the Lukk dataset:
+Next, we will prepare an intestine-specific subset of the GSE64985 dataset. Load
+the GSE64985 data (\Biocpkg{ExperimentHub} accession 'EH176'), and create a 
+variable with the phenotypic data using the same approach described above for 
+the E-MTAB-62 dataset:
 
 <<>>=
-library(GSE64985)
-data(GSE64985)
+GSE64985 <- hub[["EH176"]]
 pDat <- pData(GSE64985)
 @
 
-For the Engreitz dataset, the phenotypic data contains two columns containing the 'title' and 'description' of each sample entry from GEO. To identify intestinal samples from this dataset, we will use a text mining approach to find key words in the title or description associated with each sample entry. The key words 'colon' and 'intestin' successfully distinguish most intestinal samples:
+For the Engreitz dataset, the phenotypic data contains two columns containing 
+the 'title' and 'description' of each sample entry from GEO. To identify 
+intestinal samples from this dataset, we will use a text mining approach to find
+key words in the title or description associated with each sample entry. The key
+words 'colon' and 'intestin' successfully distinguish most intestinal samples:
 
 <<>>=
 keywords <- c("colon", "intestin")
 
-select = grepl(paste(keywords, collapse = "|"), pDat$title, ignore.case = TRUE) | grepl(paste(keywords, collapse = "|"), pDat$description, ignore.case = TRUE)
+select = grepl(paste(keywords, collapse = "|"),
+	pDat$title, ignore.case = TRUE) | 
+	grepl(paste(keywords, collapse = "|"), 
+	pDat$description, ignore.case = TRUE)
 @
 
-This code will treat the keywords as substrings without regard to case. For example, the keyword 'intestin' will return results that contain 'intestine', 'INTESTINE', 'intestinal', etc. This returns 582 samples containing the selected key words. To extract this subset of the data, use the exprs function:
+This code will treat the keywords as substrings without regard to case. For 
+example, the keyword 'intestin' will return results that contain 'intestine', 
+'INTESTINE', 'intestinal', etc. This returns 582 samples containing the selected
+key words. To extract this subset of the data, use the exprs function:
 
 <<>>=
 Engreitz_unprocessed.gut = exprs(GSE64985)[,select]
@@ -268,14 +472,17 @@ Engreitz_unprocessed.gut = exprs(GSE64985)[,select]
 Then pre-process the data:
 
 <<>>=
-Engreitz.gut = CM.prep(Engreitz_unprocessed.gut)
+Engreitz.gut = CMprep(Engreitz_unprocessed.gut)
 @
 
-Finally, we will set our query gene to CHGA (Entrez ID 1113) and run CM.search using the pre-processed intestine-specific datasets using the same approach as described in \ref{metaSearch}:
+Finally, we will set our query gene to CHGA (Entrez ID 1113) and run CMsearch 
+using the pre-processed intestine-specific datasets using the same approach as 
+described in \ref{metaSearch}:
 
 <<>>=
 query = "1113"
-EECs <- CM.search(list(Lukk = Lukk.gut, Engreitz = Engreitz.gut), query.genes = query)
+EECs <- CMsearch(list(Lukk = Lukk.gut, Engreitz = Engreitz.gut), query.genes = 
+	query)
 head(EECs)
 @
 
