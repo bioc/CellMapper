@@ -1,8 +1,8 @@
 Package: CellMapper
 Type: Package
 Title: Predict genes expressed selectively in specific cell types
-Version: 0.99.5
-Date: 2016-08-12
+Version: 0.99.6
+Date: 2016-10-05
 Author: Brad Nelms
 Maintainer: Brad Nelms <bnelms.research@gmail.com>
 Description: Infers cell type-specific expression based on co-expression 

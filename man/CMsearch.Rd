@@ -65,11 +65,7 @@ discovery rate (FDR) in the second, and the unadjusted p-value in the third.
 FDR is calculated using the method of Benjamini and Hochberg.
 }
 \references{
-B.D. Nelms, L. Waldron, L.A. Barrera, A.W. Weflen, J.A. Goettel, G. Guo, R.K. 
-Montgomery, M.R. Neutra, D.T. Breault, S.B. Snapper, S.H. Orkin, M.L. Bulyk, C. 
-Huttenhower and W.I. Lencer. CellMapper: rapid and accurate inference of gene 
-expression in difficult-to-isolate cell types. Genome Biol 2016, Accepted in 
-Principle.
+B.D. Nelms, L. Waldron, L.A. Barrera, A.W. Weflen, J.A. Goettel, G. Guo, R.K. Montgomery, M.R. Neutra, D.T. Breault, S.B. Snapper, S.H. Orkin, M.L. Bulyk, C. Huttenhower and W.I. Lencer. CellMapper: rapid and accurate inference of gene expression in difficult-to-isolate cell types. Genome Biology 2016, 17(1).
 }
 \author{
 Brad Nelms
