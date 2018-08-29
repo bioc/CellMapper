@@ -64,8 +64,9 @@ Next, the CellMapper package can be downloaded and installed by running the
 following code from within R:
 
 <<eval=FALSE>>=
-source("http://bioconductor.org/biocLite.R")
-biocLite("CellMapper")
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install("CellMapper")
 @
 
 We also recommend installing the companion data package, 
